@@ -7,36 +7,55 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-# Only the GitHub Pages ORIGIN, not the full path
+# IMPORTANT:
+# GitHub Pages origin should be ONLY domain, not full repo path
 ALLOWED_ORIGIN = "https://mahendrapulikallup.github.io"
 
-CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGIN}})
+CORS(
+    app,
+    resources={r"/*": {"origins": [ALLOWED_ORIGIN]}},
+    supports_credentials=False
+)
 
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
+
 @app.after_request
 def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = ALLOWED_ORIGIN
+    origin = request.headers.get("Origin")
+    if origin == ALLOWED_ORIGIN:
+        response.headers["Access-Control-Allow-Origin"] = origin
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def home():
-    return "SMTP Backend is running!"
+    return jsonify({
+        "success": True,
+        "message": "SMTP Backend is running!"
+    })
+
 
 @app.route("/send-email", methods=["POST", "OPTIONS"])
 def send_email():
     if request.method == "OPTIONS":
-        return make_response("", 200)
+        response = make_response("", 200)
+        origin = request.headers.get("Origin")
+        if origin == ALLOWED_ORIGIN:
+            response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        return response
 
     try:
-        data = request.get_json(silent=True) or {}
+        data = request.get_json(force=True)
 
-        receiver_email = data.get("receiverEmail")
-        subject = data.get("subject")
-        message = data.get("message")
+        receiver_email = data.get("receiverEmail", "").strip()
+        subject = data.get("subject", "").strip()
+        message = data.get("message", "").strip()
 
         if not receiver_email or not subject or not message:
             return jsonify({
@@ -47,7 +66,7 @@ def send_email():
         if not EMAIL_USER or not EMAIL_PASS:
             return jsonify({
                 "success": False,
-                "message": "EMAIL_USER or EMAIL_PASS not found in Render environment variables"
+                "message": "EMAIL_USER or EMAIL_PASS missing in Render Environment"
             }), 500
 
         msg = MIMEMultipart()
@@ -57,7 +76,9 @@ def send_email():
         msg.attach(MIMEText(message, "plain"))
 
         server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(EMAIL_USER, receiver_email, msg.as_string())
         server.quit()
@@ -67,17 +88,19 @@ def send_email():
             "message": "Email sent successfully!"
         }), 200
 
-    except smtplib.SMTPAuthenticationError:
+    except smtplib.SMTPAuthenticationError as e:
         return jsonify({
             "success": False,
-            "message": "Authentication failed. Check Gmail App Password."
+            "message": f"SMTP Authentication failed: {str(e)}"
         }), 401
 
     except Exception as e:
+        print("ERROR:", str(e))
         return jsonify({
             "success": False,
-            "message": str(e)
+            "message": f"Server error: {str(e)}"
         }), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
