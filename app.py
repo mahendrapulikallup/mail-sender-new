@@ -7,10 +7,7 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-# IMPORTANT:
-# After GitHub Pages is live, replace the origin below with your actual GitHub Pages origin
-# Example: https://mahendrapulikallup.github.io
-ALLOWED_ORIGIN = "https://mahendrapulikallup.github.io"
+ALLOWED_ORIGIN = "https://mahendrapulikallup.github.io/mail-sender-new/"
 
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGIN}})
 
