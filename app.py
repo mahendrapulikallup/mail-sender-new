@@ -7,7 +7,8 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-ALLOWED_ORIGIN = "https://mahendrapulikallup.github.io/mail-sender-new/"
+# Only the GitHub Pages ORIGIN, not the full path
+ALLOWED_ORIGIN = "https://mahendrapulikallup.github.io"
 
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGIN}})
 
