@@ -138,59 +138,56 @@
   </div>
 
   <script>
-    const form = document.getElementById("emailForm");
-    const statusText = document.getElementById("status");
-    const sendBtn = document.getElementById("sendBtn");
+  const form = document.getElementById("emailForm");
+  const statusText = document.getElementById("status");
+  const sendBtn = document.getElementById("sendBtn");
 
-    // IMPORTANT:
-    // After Render deploy, replace this with your real Render backend URL
-    const BACKEND_URL = "https://mail-sender-new-o5bs.onrender.com/send-email";
+  const BACKEND_URL = "https://mail-sender-new-o5bs.onrender.com/send-email";
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-      const receiverEmail = document.getElementById("receiverEmail").value.trim();
-      const subject = document.getElementById("subject").value.trim();
-      const message = document.getElementById("message").value.trim();
+    const receiverEmail = document.getElementById("receiverEmail").value.trim();
+    const subject = document.getElementById("subject").value.trim();
+    const message = document.getElementById("message").value.trim();
 
-      statusText.className = "info";
-      statusText.textContent = "Sending email...";
-      sendBtn.disabled = true;
-      sendBtn.textContent = "Sending...";
+    statusText.className = "info";
+    statusText.textContent = "Sending email...";
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending...";
 
-      try {
-        const response = await fetch(BACKEND_URL, {
-          method: "POST",
-          mode: "cors",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            receiverEmail,
-            subject,
-            message
-          })
-        });
+    try {
+      const response = await fetch(BACKEND_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          receiverEmail,
+          subject,
+          message
+        })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok && data.success) {
-          statusText.className = "success";
-          statusText.textContent = data.message || "Email sent successfully!";
-          form.reset();
-        } else {
-          statusText.className = "error";
-          statusText.textContent = data.message || "Failed to send email.";
-        }
-      } catch (error) {
-        console.error(error);
+      if (response.ok && data.success) {
+        statusText.className = "success";
+        statusText.textContent = data.message;
+        form.reset();
+      } else {
         statusText.className = "error";
-        statusText.textContent = "Could not connect to backend.";
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Send Email";
+        statusText.textContent = data.message || "Failed to send email.";
       }
-    });
-  </script>
+    } catch (error) {
+      console.error(error);
+      statusText.className = "error";
+      statusText.textContent = "Could not connect to backend.";
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send Email";
+    }
+  });
+</script>
 </body>
 </html>
